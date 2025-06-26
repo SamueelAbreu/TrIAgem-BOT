@@ -1,0 +1,284 @@
+/* ==========================================================================
+    1. Variáveis de Cores e Configurações Globais
+   ========================================================================== */
+:root {
+    --cor-fundo-principal: #4d4d65;
+    --cor-fonte-clara: #e0e0e0;
+    --cor-topo: #494967;
+    --cor-borda: #666666;
+    --cor-sidebar: #43434f;
+    --cor-botao: #4e5a75;
+    --cor-historico-texto: #b0b0b0;
+    --cor-icone: #9baec9;
+    --cor-chat-bg-1: #58586f;
+    --cor-chat-bg-2: #434355;
+    --cor-msg-bot-inicio: #5e6175;
+    --cor-msg-bot-fim: #72778d;
+    --cor-msg-usuario: #3d556c;
+    --cor-input-fundo: #4a4a62;
+    --cor-borda-input: #888888;
+    --cor-enviar: #8a9eb9;
+}
+
+/* Reset básico e definição da fonte padrão */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    display: flex;
+    height: 100vh;
+    overflow: hidden; /* Previne scroll na página inteira */
+    font-size: 1.05rem;
+    background-color: var(--cor-fundo-principal);
+    color: var(--cor-fonte-clara);
+}
+
+/* ==========================================================================
+    2. Layout Principal (Topo, Sidebar, Área de Chat)
+   ========================================================================== */
+
+/* Cabeçalho fixo no topo da página */
+.topo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background-color: var(--cor-topo);
+    display: flex;
+    align-items: center;
+    padding-left: 20px;
+    z-index: 10;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.topo img {
+    height: 40px;
+}
+
+/* Barra lateral fixa para navegação e histórico */
+.sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 250px;
+    height: calc(100vh - 60px);
+    background-color: var(--cor-sidebar);
+    padding: 20px;
+    overflow-y: auto;
+    border-right: 1px solid var(--cor-borda);
+}
+
+/* Área principal onde o chat ocorre */
+.chat-area {
+    margin-left: 250px; /* Espaço para a sidebar */
+    margin-top: 60px;   /* Espaço para o topo */
+    width: calc(100% - 250px);
+    height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(to bottom, var(--cor-chat-bg-1), var(--cor-chat-bg-2));
+    position: relative;
+    padding: 30px 40px 100px 40px; /* Aumentado o padding-bottom para a área de input */
+}
+
+/* ==========================================================================
+    3. Componentes da Interface (Botões, Histórico)
+   ========================================================================== */
+
+.sidebar .novo-chat {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--cor-botao);
+    color: var(--cor-fonte-clara);
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    cursor: pointer;
+    font-size: 1.05rem;
+}
+
+.sidebar .novo-chat i {
+    margin-right: 8px;
+}
+
+.sidebar .historico {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar .chat-item {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    color: var(--cor-historico-texto);
+    cursor: pointer;
+}
+
+.sidebar .chat-item i {
+    font-size: 0.5rem;
+    margin-right: 8px;
+    color: var(--cor-icone);
+}
+
+/* ==========================================================================
+    4. Estilos da Área e das Mensagens do Chat
+   ========================================================================== */
+
+/* Contêiner que agrupa as mensagens */
+.mensagens {
+    flex: 1; /* Faz com que ocupe todo o espaço vertical disponível */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding-right: 15px; /* Espaço para a barra de rolagem */
+}
+
+/* Estilo base para cada balão de mensagem */
+.msg {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    max-width: 70%; /* Mensagens não devem ocupar a tela toda */
+}
+
+/* Alinhamento para mensagens do bot */
+.msg.bot {
+    align-self: flex-start;
+}
+
+/* Alinhamento para mensagens do usuário */
+.msg.usuario {
+    align-self: flex-end;
+    flex-direction: row-reverse; /* Inverte a ordem (texto, depois imagem) */
+}
+
+.msg img {
+    margin-top: 6px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+}
+
+.msg .texto {
+    padding: 14px 18px;
+    border-radius: 15px;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    word-wrap: break-word; /* Garante a quebra de palavras longas */
+}
+
+.msg.bot .texto {
+    background: linear-gradient(to right, var(--cor-msg-bot-inicio), var(--cor-msg-bot-fim));
+}
+
+.msg.usuario .texto {
+    background-color: var(--cor-msg-usuario);
+}
+
+/* ==========================================================================
+    5. Estilos da Área de Input do Usuário
+   ========================================================================== */
+
+/* Contêiner que envolve o textarea e o botão de enviar */
+.input-area {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%); /* Centraliza a área de input */
+    width: 60%;
+    display: flex;
+    align-items: center;
+}
+
+.campo-sintoma {
+    flex-grow: 1; /* Faz o textarea ocupar o espaço disponível */
+    min-height: 48px;
+    max-height: 150px;
+    padding: 12px 50px 12px 16px; /* Espaço à direita para o botão */
+    font-size: 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--cor-borda-input);
+    background-color: var(--cor-input-fundo);
+    color: var(--cor-fonte-clara);
+    resize: none; /* Impede o redimensionamento manual */
+    overflow-y: auto;
+}
+
+.enviar-sintoma {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--cor-enviar);
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 5px;
+}
+
+/* ==========================================================================
+    6. Estilização Customizada da Scrollbar
+   ========================================================================== */
+
+/* Estilo para navegadores WebKit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--cor-botao);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--cor-enviar);
+}
+
+/* Estilo para Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cor-botao) transparent;
+}
+
+/* ==========================================================================
+    7. Media Queries para Responsividade
+   ========================================================================== */
+
+/* Para telas menores que 900px (Tablets) */
+@media (max-width: 900px) {
+    .sidebar {
+        display: none; /* Oculta a sidebar */
+    }
+    .chat-area {
+        margin-left: 0;
+        width: 100%;
+    }
+    .input-area {
+        width: 90%; /* Aumenta a largura da área de input */
+    }
+}
+
+/* Para telas menores que 600px (Celulares) */
+@media (max-width: 600px) {
+    .chat-area {
+        padding: 20px 20px 100px 20px;
+    }
+    .msg {
+        max-width: 90%; /* Mensagens podem ser um pouco mais largas */
+    }
+}

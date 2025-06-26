@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TrIAgem</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <link rel="icon" type="image/png" href="assets/icone-triagem.png">
+
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <header class="topo">
+        <img src="assets/logo-triagem.png" alt="Logo da plataforma TrIAgem" />
+    </header>
+
+    <aside class="sidebar">
+        <button class="novo-chat"><i class="fas fa-comments"></i> Novo Chat</button>
+        
+        <div id="chat-history" class="historico">
+            <h4>Chats</h4>
+            <div class="chat-item"><i class="fas fa-circle"></i> 25/06/2025</div>
+            <div class="chat-item"><i class="fas fa-circle"></i> 24/06/2025</div>
+            <div class="chat-item"><i class="fas fa-circle"></i> 23/06/2025</div>
+        </div>
+    </aside>
+
+    <main class="chat-area">
+        <div id="chat-messages" class="mensagens">
+            <div class="msg bot">
+                <img src="assets/icone-triagem.png" alt="Ícone do assistente virtual" />
+                <div class="texto">Olá! Sou o assistente da plataforma TrIAgem. Por favor, descreva seus sintomas para que eu possa realizar uma análise inicial.</div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <textarea id="symptom-input" class="campo-sintoma" placeholder="Digite seus sintomas aqui..."></textarea>
+            <button id="send-button" class="enviar-sintoma" type="button" aria-label="Enviar mensagem">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
