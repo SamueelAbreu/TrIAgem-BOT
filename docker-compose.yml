@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  agente-triagem:
+    build:
+      context: ./agente_triagem
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    # volumes:                      
+    #   - ./agente_triagem:/app
+    networks:
+      - triagem_network
+    restart: unless-stopped
+
+  agente-recomendacoes:
+    build:
+      context: ./agente_recomendacoes
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    # volumes:                     
+    #   - ./agente_recomendacoes:/app
+    networks:
+      - triagem_network
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    # volumes:                      
+    #   - ./gateway:/app
+    networks:
+      - triagem_network
+    restart: unless-stopped
+
+  frontend: 
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./front_end:/etc/nginx/html # Este está correto, pois a imagem nginx não tem seu código
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - triagem_network
+    restart: unless-stopped
+
+networks:
+  triagem_network:
+    driver: bridge
