@@ -42,7 +42,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./front_end:/etc/nginx/html # Este está correto, pois a imagem nginx não tem seu código
+      - ./front-end:/etc/nginx/html 
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - triagem_network

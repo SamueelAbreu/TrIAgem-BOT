@@ -7,15 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, Any, Optional
 import logging
 
-# Configuração de logging
-logging.basicConfig(leqvel=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 print("Iniciando o Gateway de Comunicação entre Agentes...")
 
-# Configurações dos serviços
-AGENTE_TRIAGEM_URL = "http://localhost:8000"
-AGENTE_RECOMENDACOES_URL = "http://localhost:8001"
+AGENTE_TRIAGEM_URL = "http://agente-triagem:8000"
+AGENTE_RECOMENDACOES_URL = "http://agente-recomendacoes:8001"
 
 app = FastAPI(
     title="Gateway de Comunicação - Sistema TrIAgem",
@@ -23,10 +21,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configura o CORS para permitir acesso do frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, especificar origens específicas
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -50,7 +47,6 @@ class HealthStatus(BaseModel):
     timestamp: str
 
 async def verificar_saude_agente(url: str, endpoint: str = "/docs") -> bool:
-    """Verifica se um agente está respondendo."""
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.get(f"{url}{endpoint}")
@@ -60,7 +56,6 @@ async def verificar_saude_agente(url: str, endpoint: str = "/docs") -> bool:
         return False
 
 async def chamar_agente_triagem(sintomas: str) -> Dict[str, Any]:
-    """Chama o agente de triagem e retorna o resultado."""
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
@@ -77,7 +72,6 @@ async def chamar_agente_triagem(sintomas: str) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail="Erro interno no agente de triagem")
 
 async def chamar_agente_recomendacoes(urgencia: str, sintomas: str, resultado_triagem: str) -> Dict[str, Any]:
-    """Chama o agente de recomendações e retorna o resultado."""
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
@@ -98,7 +92,6 @@ async def chamar_agente_recomendacoes(urgencia: str, sintomas: str, resultado_tr
         raise HTTPException(status_code=500, detail="Erro interno no agente de recomendações")
 
 def extrair_urgencia_do_resultado(resultado: str) -> str:
-    """Extrai o nível de urgência do resultado da triagem."""
     resultado_lower = resultado.lower()
     if "alta" in resultado_lower:
         return "alta"
@@ -109,34 +102,19 @@ def extrair_urgencia_do_resultado(resultado: str) -> str:
 
 @app.post("/triagem-completa", response_model=TriagemCompleta, summary="Executa triagem completa com recomendações")
 async def executar_triagem_completa(sintomas: SintomasInput):
-    """
-    Endpoint principal que orquestra a comunicação entre os agentes.
-    
-    Fluxo:
-    1. Recebe sintomas do frontend
-    2. Chama o Agente de Triagem
-    3. Extrai o nível de urgência
-    4. Chama o Agente de Recomendações
-    5. Consolida e retorna a resposta
-    """
     import time
     inicio = time.time()
-    
     logger.info(f"Iniciando triagem completa para: {sintomas.texto_sintomas[:50]}...")
-    
     agentes_consultados = []
-    
+
     try:
-        # Passo 1: Chamar o Agente de Triagem
         logger.info("Consultando Agente de Triagem...")
         resultado_triagem = await chamar_agente_triagem(sintomas.texto_sintomas)
         agentes_consultados.append("agente_triagem")
         
-        # Passo 2: Extrair nível de urgência
         urgencia = extrair_urgencia_do_resultado(resultado_triagem["resultado_triagem"])
         logger.info(f"Urgência identificada: {urgencia}")
         
-        # Passo 3: Chamar o Agente de Recomendações
         logger.info("Consultando Agente de Recomendações...")
         recomendacoes = await chamar_agente_recomendacoes(
             urgencia=urgencia,
@@ -145,7 +123,6 @@ async def executar_triagem_completa(sintomas: SintomasInput):
         )
         agentes_consultados.append("agente_recomendacoes")
         
-        # Passo 4: Consolidar resposta
         tempo_processamento = time.time() - inicio
         
         resposta_consolidada = TriagemCompleta(
@@ -168,17 +145,12 @@ async def executar_triagem_completa(sintomas: SintomasInput):
 
 @app.get("/health", response_model=HealthStatus, summary="Verifica o status de todos os componentes")
 async def verificar_saude_sistema():
-    """Endpoint para verificar a saúde de todo o sistema."""
     from datetime import datetime
-    
-    # Verifica a saúde de cada agente em paralelo
     tarefas = [
         verificar_saude_agente(AGENTE_TRIAGEM_URL),
         verificar_saude_agente(AGENTE_RECOMENDACOES_URL, "/health")
     ]
-    
     resultados = await asyncio.gather(*tarefas, return_exceptions=True)
-    
     status_triagem = "healthy" if resultados[0] is True else "unhealthy"
     status_recomendacoes = "healthy" if resultados[1] is True else "unhealthy"
     
@@ -191,33 +163,14 @@ async def verificar_saude_sistema():
 
 @app.get("/", summary="Informações do Gateway")
 async def informacoes_gateway():
-    """Endpoint raiz com informações sobre o gateway."""
     return {
-        "service": "Gateway TrIAgem",
-        "version": "1.0.0",
+        "service": "Gateway TrIAgem", "version": "1.0.0",
         "description": "Gateway que orquestra a comunicação entre agentes de IA",
-        "endpoints": {
-            "triagem_completa": "/triagem-completa",
-            "health_check": "/health",
-            "documentacao": "/docs"
-        },
         "agentes_conectados": {
             "agente_triagem": AGENTE_TRIAGEM_URL,
             "agente_recomendacoes": AGENTE_RECOMENDACOES_URL
         }
     }
 
-# Endpoint de compatibilidade com o frontend existente
-@app.post("/triagem", summary="Endpoint de compatibilidade (apenas triagem)")
-async def triagem_compatibilidade(sintomas: SintomasInput):
-    """Endpoint para manter compatibilidade com o frontend existente."""
-    try:
-        resultado = await chamar_agente_triagem(sintomas.texto_sintomas)
-        return resultado
-    except Exception as e:
-        logger.error(f"Erro na triagem de compatibilidade: {e}")
-        raise
-
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
-

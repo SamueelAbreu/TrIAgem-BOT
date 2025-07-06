@@ -1,63 +1,91 @@
 /**
  * @file script.js
  * @description Lógica do frontend para a plataforma TrIAgem.
- *
- * Responsabilidades:
- * 1. Capturar o texto do usuário e interagir com os elementos da página (DOM).
- * 2. Enviar os sintomas para a API de triagem via requisição assíncrona (fetch).
- * 3. Exibir as mensagens do usuário e do bot dinamicamente na interface.
- * 4. Gerenciar estados da UI (carregamento, erro) para uma melhor experiência.
  */
 
-// Executa o script somente após o carregamento completo da página.
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- 1. SELEÇÃO DE ELEMENTOS GLOBAIS ---
     const symptomInput = document.getElementById('symptom-input');
     const sendButton = document.getElementById('send-button');
     const chatMessages = document.getElementById('chat-messages');
-    const API_URL = 'http://localhost:8000/triagem';
-
-    // --- 2. FUNÇÕES AUXILIARES ---
+    
+    // Aponta para o endpoint do Gateway, que será redirecionado pelo Nginx.
+    const API_URL = '/api/triagem-completa';
 
     /**
      * Adiciona uma nova mensagem (do usuário ou do bot) na interface do chat.
-     * @param {string} texto O conteúdo da mensagem a ser exibida.
-     * @param {string} tipo O remetente da mensagem ('usuario' ou 'bot').
      */
-    const adicionarMensagemNaTela = (texto, tipo) => {
+    const adicionarMensagemNaTela = (htmlContent, tipo) => {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('msg', tipo);
 
         const msgInnerHTML = (tipo === 'usuario')
             ? `
-                <div class="texto">${texto}</div>
+                <div class="texto">${htmlContent}</div>
                 <img src="assets/icone-triagem.png" alt="Ícone do usuário">
               `
             : `
                 <img src="assets/icone-triagem.png" alt="Ícone do assistente TrIAgem">
-                <div class="texto">${texto}</div>
+                <div class="texto">${htmlContent}</div>
               `;
         
         msgDiv.innerHTML = msgInnerHTML;
         chatMessages.appendChild(msgDiv);
-        
-        // Garante que a visualização do chat sempre role para a mensagem mais recente.
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll
+        return msgDiv;
     };
+    
+    /**
+     * Formata a resposta completa da API em um HTML legível.
+     */
+    const formatarRespostaCompleta = (data) => {
+        let htmlResponse = `<p><strong>Resultado da Triagem:</strong> ${data.resultado_triagem}</p>`;
+        
+        const rec = data.recomendacoes;
+        if (rec) {
+            htmlResponse += `<p><em>${rec.observacoes || ''}</em></p>`;
+            
+            if (rec.recomendacoes_gerais) {
+                htmlResponse += `<h4>Orientações Gerais</h4><ul>`;
+                Object.values(rec.recomendacoes_gerais).forEach(category => {
+                    if (Array.isArray(category)) {
+                        category.forEach(item => { htmlResponse += `<li>${item}</li>`; });
+                    }
+                });
+                htmlResponse += `</ul>`;
+            }
+
+            if (rec.recomendacoes_especificas && rec.recomendacoes_especificas.length > 0) {
+                htmlResponse += `<h4>Dicas para seus sintomas</h4><ul>`;
+                rec.recomendacoes_especificas.forEach(item => { htmlResponse += `<li>${item}</li>`; });
+                htmlResponse += `</ul>`;
+            }
+            
+            if (rec.medicos_recomendados && rec.medicos_recomendados.length > 0) {
+                 htmlResponse += `<h4>Sugestões de Atendimento</h4>`;
+                 rec.medicos_recomendados.forEach(medico => {
+                     htmlResponse += `
+                        <div class="medico-card">
+                            <strong>${medico.nome_local}</strong><br>
+                            <small>${medico.especialidade}</small><br>
+                            <span>${medico.endereco}</span><br>
+                            <span>Tel: ${medico.telefone || 'Não informado'}</span>
+                        </div>`;
+                 });
+            }
+        }
+        return htmlResponse;
+    }
+
 
     /**
      * Habilita ou desabilita a interface de input durante a comunicação com a API.
-     * @param {boolean} isLoading True para desabilitar (carregando), false para habilitar.
      */
     const gerenciarEstadoDeCarregamento = (isLoading) => {
         symptomInput.disabled = isLoading;
         sendButton.disabled = isLoading;
         symptomInput.placeholder = isLoading ? "Analisando..." : "Digite seus sintomas aqui...";
     };
-
-
-    // --- 3. FUNÇÃO PRINCIPAL DE PROCESSAMENTO ---
 
     /**
      * Captura o texto, envia para a API e gerencia a exibição da resposta.
@@ -66,51 +94,61 @@ document.addEventListener('DOMContentLoaded', () => {
         const textoSintoma = symptomInput.value.trim();
         if (!textoSintoma) return;
 
-        // Atualiza a interface com a mensagem do usuário e limpa o campo.
+        // O conteúdo da mensagem do usuário é apenas o texto, não mais HTML.
         adicionarMensagemNaTela(textoSintoma, 'usuario');
         symptomInput.value = '';
         
-        // Bloqueia a interface para evitar envios duplicados enquanto aguarda a resposta.
         gerenciarEstadoDeCarregamento(true);
+        // Adiciona um indicador de "digitando" para melhor feedback visual.
+        const typingIndicator = adicionarMensagemNaTela(`<div class="typing-indicator"><span></span><span></span><span></span></div>`, 'bot');
 
         try {
-            // Envia a requisição para a API e aguarda a resposta.
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ texto_sintomas: textoSintoma })
             });
 
+            chatMessages.removeChild(typingIndicator);
+
             if (!response.ok) {
-                throw new Error(`Erro na API: ${response.statusText}`);
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `Erro na API: ${response.statusText}`);
             }
 
             const data = await response.json();
-            adicionarMensagemNaTela(data.resultado_triagem, 'bot');
+            const respostaFormatada = formatarRespostaCompleta(data);
+            adicionarMensagemNaTela(respostaFormatada, 'bot');
 
         } catch (error) {
-            // Em caso de falha, informa o usuário sobre o erro.
+            if (chatMessages.contains(typingIndicator)) {
+                chatMessages.removeChild(typingIndicator);
+            }
             console.error("Falha na comunicação com a API:", error);
-            adicionarMensagemNaTela('Desculpe, ocorreu um erro de comunicação. Por favor, tente novamente mais tarde.', 'bot');
+            adicionarMensagemNaTela(`Desculpe, ocorreu um erro de comunicação. Por favor, tente novamente mais tarde. <br><small>${error.message}</small>`, 'bot');
         } finally {
-            // Independente de sucesso ou falha, reabilita a interface para o usuário.
             gerenciarEstadoDeCarregamento(false);
             symptomInput.focus();
         }
     };
 
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .typing-indicator span { height: 8px; width: 8px; background-color: #9BAEC9; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-indicator span:nth-of-type(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-of-type(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        .medico-card { border-left: 3px solid var(--cor-enviar); padding-left: 10px; margin-top: 10px; font-size: 0.95rem; }
+        .medico-card small { color: #ccc; }
+    `;
+    document.head.appendChild(style);
 
-    // --- 4. EVENT LISTENERS ---
-
-    // Associa a função de envio ao evento de clique do botão.
     sendButton.addEventListener('click', processarEnvioDeSintomas);
 
-    // Permite que o usuário envie a mensagem com a tecla 'Enter'.
     symptomInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault(); // Previne a quebra de linha no textarea.
+            event.preventDefault();
             processarEnvioDeSintomas();
         }
     });
-
 });
