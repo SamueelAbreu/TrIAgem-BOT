@@ -20,7 +20,7 @@
     --cor-enviar: #8a9eb9;
 }
 
-/* Reset básico e definição da fonte padrão */
+/* Reset básico e definição de fonte padrão */
 * {
     margin: 0;
     padding: 0;
@@ -128,7 +128,7 @@ body {
 }
 
 /* ==========================================================================
-    4. Estilos da Área e das Mensagens do Chat
+    4. Estilos de Área e das Mensagens do Chat
    ========================================================================== */
 
 /* Contêiner que agrupa as mensagens */

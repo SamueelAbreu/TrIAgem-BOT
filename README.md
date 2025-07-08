@@ -4,7 +4,7 @@ Este repositório contém o código-fonte do projeto da disciplina de **Sistemas
 
 **Instituição:** Universidade Federal de Lavras (UFLA)  
 **Autores:**
-* André Araújo
+* André Araújo Mendonça
 * Luiz Carlos de Paiva Silva
 * Samuel Moreira Abreu
 * Sandy Karolina Maciel

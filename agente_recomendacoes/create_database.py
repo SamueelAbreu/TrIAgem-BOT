@@ -32,7 +32,7 @@ medicos = [
 
     # Média Urgência (Clínicos Gerais e Especialistas)
     ('Clínica Geral Dr. House', 'Clínico Geral', 'Rua dos Diagnósticos, 101, Vila Madalena', '(41) 98877-6655', 'media'),
-    ('Consultório Dr. Marcus Welby', 'Clínico Geral', 'Alameda dos Ipês, 202, Jardins', '(51) 97766-5544', 'media'),
+    ('Consultório Dr. Marcus Renan', 'Clínico Geral', 'Alameda dos Ipês, 202, Jardins', '(51) 97766-5544', 'media'),
     ('Clínica Otorrino Center', 'Otorrinolaringologista', 'Av. do Ouvido, 303, Moema', '(61) 96655-4433', 'media'),
     ('NeuroClínica', 'Neurologista', 'Rua da Mente, 404, Pinheiros', '(71) 95544-3322', 'media'),
     ('GastroCenter', 'Gastroenterologista', 'Travessa do Estômago, 505, Lapa', '(81) 94433-2211', 'media'),
